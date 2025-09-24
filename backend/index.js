@@ -1,5 +1,6 @@
 import express from 'express'
 import 'dotenv/config'
+import routes from './routes/routes.js'
 const app = express()
 
 // corses
@@ -13,15 +14,8 @@ app.use(function (req, res, next) {
 })
 
 app.use(express.json()) // Middleware to parse JSON bodies
-app.post('/data', (req, res) => {
-  const receivedData = req.body
-  console.log(receivedData)
-  res.sendStatus(200)
-}) // Endpoint to receive data
 
-app.get('/', function (req, res) {
-  res.send('Hello World')
-})
+app.use('/', routes)
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on port ${process.env.PORT}`)
