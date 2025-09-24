@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Employee Leave Management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Enigma2017/employee-leave-management.git"
+  },
+  "author": "Shvets K",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Enigma2017/employee-leave-management/issues"
+  },
+  "homepage": "https://github.com/Enigma2017/employee-leave-management#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
