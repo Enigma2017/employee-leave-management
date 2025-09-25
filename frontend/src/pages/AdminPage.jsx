@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {fetchUsers} from '../services/Api';
+import { AddUsersForm } from '../components/AddUsersForm';
 
 export const AdminPage = () => {
   const [users, setUsers] = useState([]);
@@ -30,6 +31,7 @@ export const AdminPage = () => {
           ))}
         </tbody>
       </table>
+      <AddUsersForm />
     </div>
   )
 }   
