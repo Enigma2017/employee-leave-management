@@ -1,8 +1,14 @@
 import pool from "../db/db.js";
 
 // Функция для получения всех пользователей
-export async function getAllUsers() {
-    const result = await pool.query("SELECT * FROM users");
+export async function getAllUsers(role = 'all') {
+    let query = 'SELECT * FROM users';
+    const values = [];
+    if (role !== 'all') {
+        query += ' WHERE role = $1';
+        values.push(role);
+    }
+    const result = await pool.query(query, values);
     return result.rows;
 }
 

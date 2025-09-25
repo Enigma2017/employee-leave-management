@@ -38,7 +38,7 @@ router.get('/testdb', async (req, res) => {
 // users RESTful API endpoints
 router.get('/users', async (req, res) => {
   try {
-    const users = await getAllUsers()
+    const users = await getAllUsers(req.query.role)
     res.json(users)
   } catch (error) {
     console.error(error)
