@@ -1,10 +1,13 @@
 import routes from 'express' // import express
 import { getAllUsers, createUsersTable, addUser, editUser, deleteUser } from '../services/users.services.js'
+import { createVacationsTable, getAllVacations, addVacation, editVacation, deleteVacation, checkVacation } from '../services/vacation.service.js'
+
 const router = routes.Router() // create a router instance
 //(async () => await createUsersTable())() // ensure the users table exists
 async function ensureUsersTable() {
   try {
     await createUsersTable()
+    await createVacationsTable()
   } catch (error) {
     console.error("Error creating users table:", error)
   }
@@ -92,6 +95,74 @@ router.delete('/user/:id', async (req, res) => {
   } catch (error) {
     console.error(error)
     res.status(500).send('Internal Server Error')   
+  }
+})
+
+
+// получить все отпуска
+router.get('/vacations', async (req, res) => {
+  try {
+    const vacations = await getAllVacations()
+    res.json(vacations)
+  } catch (error) {
+    console.error(error)
+    res.status(500).send('Internal Server Error')
+  }
+})
+
+// создать новый отпуск
+router.post('/vacations', async (req, res) => {
+  const { userId, start_date, end_date } = req.body
+  try {
+    const vacation = await addVacation(userId, start_date, end_date)
+    if (!vacation) return res.status(400).send('Error creating vacation')
+    res.status(201).json(vacation)
+  } catch (error) {
+    console.error(error)
+    res.status(500).send('Internal Server Error')
+  }
+})
+
+// проверить доступность отпуска
+router.post('/vacations/check', async (req, res) => {
+  const { userId, start_date, end_date } = req.body
+  try {
+    const result = await checkVacation(userId, start_date, end_date)
+    res.json(result)
+  } catch (error) {
+    console.error(error)
+    res.status(500).send('Internal Server Error')
+  }
+})
+
+// удалить отпуск
+router.delete('/vacations/:id', async (req, res) => {
+  const { id } = req.params
+  try {
+    await deleteVacation(id)
+    res.status(200).send('Vacation deleted successfully')
+  } catch (error) {
+    console.error(error)
+    res.status(500).send('Internal Server Error')
+  }
+})
+
+router.put('/vacations/:id', async (req, res) => {
+  const { id } = req.params
+  const { start_date, end_date, status } = req.body
+
+  try {
+    const updatedVacation = await editVacation(id, start_date, end_date, status)
+    if (!updatedVacation) {
+      return res.status(400).send('Error editing vacation')
+    }
+    res.status(200).json({
+      data: updatedVacation,
+      status: 'Vacation updated successfully'
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).send('Internal Server Error')
   }
 })
 

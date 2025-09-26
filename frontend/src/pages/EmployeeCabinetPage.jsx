@@ -1,3 +1,9 @@
+import {Calendar} from "../components/Calendar";
+
 export const EmployeeCabinetPage = () => {
-  return <div>Employee Cabinet Page</div>;
+  return(
+    <div>
+      <Calendar />
+    </div>
+  )
 };

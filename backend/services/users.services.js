@@ -1,16 +1,5 @@
 import pool from "../db/db.js";
 
-// Функция для получения всех пользователей
-export async function getAllUsers(role = 'all') {
-    let query = 'SELECT * FROM users';
-    const values = [];
-    if (role !== 'all') {
-        query += ' WHERE role = $1';
-        values.push(role);
-    }
-    const result = await pool.query(query, values);
-    return result.rows;
-}
 
 // create the table of users
 export async function createUsersTable() {
@@ -25,6 +14,37 @@ export async function createUsersTable() {
     `;
     await pool.query(query);
 }
+
+// Функция для получения всех пользователей
+export async function getAllUsers(role = 'all') {
+  const query = `
+    SELECT 
+      u.id, 
+      u.name, 
+      u.email, 
+      u.role,
+      COALESCE(
+        json_agg(
+          json_build_object(
+            'id', v.id,
+            'start_date', v.start_date,
+            'end_date', v.end_date,
+            'status', v.status
+          )
+        ) FILTER (WHERE v.id IS NOT NULL),
+        '[]'
+      ) AS vacations
+    FROM users u
+    LEFT JOIN vacations v ON u.id = v.user_id
+    WHERE ($1 = 'all' OR u.role = $1)
+    GROUP BY u.id, u.name, u.email, u.role;
+  `;
+
+  const values = [role];
+  const result = await pool.query(query, values);
+  return result.rows;
+}
+
 
 // function to add a new user
 export async function addUser(name, email, role, password) {

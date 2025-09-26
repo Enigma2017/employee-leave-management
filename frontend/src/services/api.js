@@ -33,3 +33,35 @@ export const deleteUser = async (id) => {
   });
   return response;   
 }
+
+
+// --- VACATIONS ---
+export const checkVacation = async (userId, start_date, end_date) => {
+  const response = await fetch(`${apiUrl}/vacations/check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, start_date, end_date })
+  });
+  return response.json();
+};
+
+export const createVacation = async (userId, start_date, end_date) => {
+  const response = await fetch(`${apiUrl}/vacations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, start_date, end_date })
+  });
+  return response;
+};
+
+export const fetchVacations = async () => {
+  const response = await fetch(`${apiUrl}/vacations`);
+  return response.json();
+};
+
+export const deleteVacation = async (id) => {
+  const response = await fetch(`${apiUrl}/vacations/${id}`, {
+    method: "DELETE"
+  });
+  return response;
+};
