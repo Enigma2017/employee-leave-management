@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {fetchUsers} from '../services/Api';
+import {fetchUsers, deleteUser} from '../services/Api';
 import { AddUsersForm } from '../components/AddUsersForm';
 import { EditUsersForm } from '../components/EditUsersForm';
 
@@ -26,7 +26,22 @@ export const AdminPage = () => {
   const editHandler = (user) => {
     setShowForm('edit');
     setCurrentUser(user);
-  } 
+  }
+  
+ const deleteHandler = (id) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+  
+  if (!confirmDelete) return; //
+
+  deleteUser(id).then(response => {
+    if (response.status === 200) {
+      setUsers(users.filter(user => user.id !== id));
+      alert('User deleted successfully');
+    } else {
+      alert('Error deleting user');
+    }
+  });
+};
 
   return (
     <div>
@@ -53,8 +68,8 @@ export const AdminPage = () => {
               <td>{user.email}</td>
               <td>{user.role}</td>
               <td>
-                <button onClick={() => editHandler(user)  }>Edit</button>
-                <button onClick={() => console.log('Delete user')}>Delete</button>
+                <button onClick={() => editHandler(user)}>Edit</button>
+                <button onClick={() => deleteHandler(user.id)}>Delete</button>
               </td>
             </tr>
           ))}

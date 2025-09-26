@@ -31,5 +31,5 @@ export const deleteUser = async (id) => {
   const response = await fetch(`${apiUrl}/user/${id}`, {
     method: 'DELETE',    
   });
-  return response.json();   
+  return response;   
 }

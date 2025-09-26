@@ -85,8 +85,10 @@ router.put('/user/:id', async (req, res) => {
 router.delete('/user/:id', async (req, res) => {
   const { id } = req.params
   try {
+    // delete the user from the database and check success
     await deleteUser(id)
-    res.status(204).send() // No Content
+    res.status(200).send('User deleted successfully')
+    
   } catch (error) {
     console.error(error)
     res.status(500).send('Internal Server Error')   
