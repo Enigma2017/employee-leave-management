@@ -68,7 +68,12 @@ router.put('/user/:id', async (req, res) => {
   const { name, email, role, password } = req.body
   try {
     const updatedUser = await editUser(id, name, email, role, password)
-    res.json(updatedUser)
+    const isSuccess = !!updatedUser
+    if (!isSuccess) {
+      return res.status(400).send('Error editing user')
+    }
+    res.status(201).json({data: updatedUser}, {status: 'User edited successfully'})
+
   } catch (error) {
     console.error(error)
     res.status(500).send('Internal Server Error')   

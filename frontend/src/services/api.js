@@ -24,7 +24,7 @@ export const editUser = async (id, user) => {
     },
     body: JSON.stringify(user)
   });
-  return response.json();       
+  return response;       
 }        
 
 export const deleteUser = async (id) => {
