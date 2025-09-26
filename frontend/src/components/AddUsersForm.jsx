@@ -1,12 +1,16 @@
 import { createUser } from "../services/Api";
 
-export const AddUsersForm = () => {
+export const AddUsersForm = ({onUpdate}) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const form = event.target;    
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);    
-    const response = await createUser(data);    
+    const response = await createUser(data);
+    if (response.status === 201) {
+      form.reset();
+    }
+    onUpdate({success: response.status === 201});    
     console.log(response);    
   } 
 

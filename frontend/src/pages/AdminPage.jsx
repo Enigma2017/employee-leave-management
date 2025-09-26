@@ -9,6 +9,15 @@ export const AdminPage = () => {
 
   }, []);
 
+  const handleUpdate = ({success}) => {
+    fetchUsers().then(data => setUsers(data));
+    if (success) {
+      alert('User created successfully');
+    } else {
+      alert('Error creating user');
+    }
+  };
+
   return (
     <div>
       <h1>Admin Page</h1>
@@ -31,7 +40,7 @@ export const AdminPage = () => {
           ))}
         </tbody>
       </table>
-      <AddUsersForm />
+      <AddUsersForm onUpdate={handleUpdate} />
     </div>
   )
 }   

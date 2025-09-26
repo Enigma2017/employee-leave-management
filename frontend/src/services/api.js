@@ -13,7 +13,7 @@ export const createUser = async (user) => {
     },
     body: JSON.stringify(user)
   });
-  return response.json();       
+  return response;       
 }
 
 export const editUser = async (id, user) => {
