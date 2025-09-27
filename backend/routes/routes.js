@@ -1,6 +1,6 @@
 import routes from 'express' // import express
 import { getAllUsers, createUsersTable, addUser, editUser, deleteUser } from '../services/users.services.js'
-import { createVacationsTable, getAllVacations, addVacation, editVacation, deleteVacation, checkVacation } from '../services/vacation.service.js'
+import { createVacationsTable, getAllVacations, addVacation, editVacation, deleteVacation, checkVacation, calculateCompensation } from '../services/vacation.service.js'
 
 const router = routes.Router() // create a router instance
 //(async () => await createUsersTable())() // ensure the users table exists
@@ -123,6 +123,31 @@ router.post('/vacations', async (req, res) => {
   }
 })
 
+/* 
+router.post('/vacations', async (req, res) => {
+  const { userId, start_date, end_date } = req.body;
+  try {
+    const result = await calculateCompensation(userId, start_date, end_date);
+
+    if (!result.allowed) {
+      return res.status(400).json({ error: result.reason });
+    }
+
+    const vacation = await pool.query(
+      `INSERT INTO vacations (user_id, start_date, end_date, paid_days, unpaid_days, compensation)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [userId, start_date, end_date, result.paidDays, result.unpaidDays, result.compensation]
+    );
+
+    res.status(201).json(vacation.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+*/
+
 // проверить доступность отпуска
 router.post('/vacations/check', async (req, res) => {
   const { userId, start_date, end_date } = req.body
@@ -165,6 +190,22 @@ router.put('/vacations/:id', async (req, res) => {
     res.status(500).send('Internal Server Error')
   }
 })
+
+// GET /vacations/calculate?userId=1&start=2025-07-01&end=2025-07-10
+router.get('/vacations/calculate', async (req, res) => {
+  const { userId, start, end } = req.query;
+  try {
+    const result = await calculateCompensation(userId, start, end);
+    if (!result.allowed) {
+      return res.status(400).json(result);
+    }
+    res.json(result); // {paidDays, unpaidDays, compensation}
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
 
 
 export default router
