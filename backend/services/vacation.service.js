@@ -103,24 +103,41 @@ export async function deleteVacation(id) {
 
 // ⚡ Настройка: максимальное количество отпусков в году
 const MAX_VACATIONS_PER_YEAR = 2;
+const MAX_TOTAL_DAYS_PER_YEAR = 30; // максимум дней отпуска в году (оплачиваемые + неоплачиваемые)
 
 export async function checkVacation(userId, startDate, endDate) {
     const year = new Date(startDate).getFullYear();
 
     // 1️⃣ Считаем, сколько отпусков уже есть у пользователя в этом году
     const countQuery = `
-        SELECT COUNT(*) AS vacation_count
+        SELECT COUNT(*) AS vacation_count,
+               COALESCE(SUM(paid_days + unpaid_days), 0) AS total_days
         FROM vacations
         WHERE user_id = $1
           AND EXTRACT(YEAR FROM start_date) = $2
     `;
     const countResult = await pool.query(countQuery, [userId, year]);
     const vacationCount = parseInt(countResult.rows[0].vacation_count, 10);
+    const totalDays = parseInt(countResult.rows[0].total_days, 10);
 
     if (vacationCount >= MAX_VACATIONS_PER_YEAR) {
         return {
             allowed: false,
             reason: `You cannot have more than ${MAX_VACATIONS_PER_YEAR} vacations per year`,
+            takenVacations: vacationCount
+        };
+    }
+
+    // Рассчитываем количество дней для нового отпуска
+    const newStart = new Date(startDate);
+    const newEnd = new Date(endDate);
+    const diffTime = Math.abs(newEnd - newStart);
+    const newDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // включая последний день
+
+    if (totalDays + newDays > MAX_TOTAL_DAYS_PER_YEAR) {
+        return {
+            allowed: false,
+            reason: `You cannot take more than ${MAX_TOTAL_DAYS_PER_YEAR} days of vacation per year`,
             takenVacations: vacationCount
         };
     }
@@ -148,6 +165,7 @@ export async function checkVacation(userId, startDate, endDate) {
         takenVacations: vacationCount
     };
 }
+
 
 
 /**

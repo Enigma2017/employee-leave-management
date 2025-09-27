@@ -8,7 +8,7 @@ export const Calendar = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [range, setRange] = useState(); 
   const [disabledDays, setDisabledDays] = useState([]); 
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState(null); // теперь объект { allowed, reason }
   const [compensation, setCompensation] = useState(null);
   const [takenVacations, setTakenVacations] = useState(0);
 
@@ -25,36 +25,56 @@ export const Calendar = () => {
     getUsers();
   }, []);
 
-  const handleSelect = async (range) => {
-    setRange(range);
+ const handleSelect = async (range) => {
+  setRange(range);
+  setCompensation(null);
+
+  if (range?.from && range?.to && currentUser) {
+    // считаем занятые дни напрямую из currentUser.vacations
+    const totalTakenDays = currentUser.vacations.reduce((sum, v) => {
+      const start = new Date(v.start_date);
+      const end = new Date(v.end_date);
+      const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      return sum + days;
+    }, 0);
+
+    const newStart = new Date(range.from);
+    const newEnd = new Date(range.to);
+    const newDays = Math.ceil((newEnd - newStart) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (totalTakenDays + newDays > 30) {
+      setStatus({ allowed: false, reason: "Exceeded maximum 30 vacation days per year" });
+      return;
+    }
+
+    const data = await checkVacation(currentUser.id, range.from, range.to);
+    setStatus(data);
+    if (data.allowed) {
+      const calc = await calculateVacation(currentUser.id, range.from, range.to);
+      setCompensation(calc);
+    }
+  }
+};
+
+
+ const handleConfirm = async () => {
+  if (!currentUser || !range?.from || !range?.to) return;
+
+  const response = await createVacation(currentUser.id, range.from, range.to);
+  if (response.status === 201) {
+    alert("Vacation request submitted!");
+    setRange(undefined);
+    setStatus(null);
     setCompensation(null);
 
-    if (range?.from && range?.to && currentUser) {
-      const data = await checkVacation(currentUser.id, range.from, range.to);
-      setStatus(data.allowed ? "available" : data.reason);
-      setTakenVacations(data.takenVacations || 0);
-
-      if (data.allowed) {
-        const calc = await calculateVacation(currentUser.id, range.from, range.to);
-        setCompensation(calc);
-      }
-    }
-  };
-
-  const handleConfirm = async () => {
-    if (!currentUser || !range?.from || !range?.to) return;
-
-    const response = await createVacation(currentUser.id, range.from, range.to);
-    if (response.status === 201) {
-      alert("Vacation request submitted!");
-      setRange(undefined);
-      setStatus(null);
-      setCompensation(null);
-      getUsers(); // обновляем данные пользователя
-    } else {
-      alert("Error creating vacation");
-    }
-  };
+    // ✅ Обновляем пользователя с актуальными vacation
+    const updatedUsers = await fetchUsers("all");
+    const updatedCurrent = updatedUsers.find(u => u.id === currentUser.id);
+    setCurrentUser(updatedCurrent);
+  } else {
+    alert("Error creating vacation");
+  }
+};
 
   const handleDeleteVacation = async (vacationId) => {
     if (!vacationId) return;
@@ -62,7 +82,6 @@ export const Calendar = () => {
     const response = await apiDeleteVacation(vacationId);
     if (response.status === 200) {
       alert('Vacation deleted successfully');
-      // обновляем данные пользователя
       setCurrentUser({
         ...currentUser,
         vacations: currentUser.vacations.filter((x) => x.id !== vacationId),
@@ -95,11 +114,11 @@ export const Calendar = () => {
             </div>
           )}
 
-          <button disabled={status?.allowed !== true} onClick={handleConfirm}>
+          <button disabled={!status?.allowed} onClick={handleConfirm}>
             Confirm Vacation
           </button>
 
-          {status && <p>{status.reason || ""}</p>}
+          {status && <p>{status.reason}</p>}
 
           {currentUser.vacations && currentUser.vacations.length > 0 && (
             <div>
