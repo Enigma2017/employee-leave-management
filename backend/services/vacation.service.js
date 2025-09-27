@@ -103,69 +103,65 @@ export async function deleteVacation(id) {
 
 // ⚡ Настройка: максимальное количество отпусков в году
 const MAX_VACATIONS_PER_YEAR = 2;
-const MAX_TOTAL_DAYS_PER_YEAR = 30; // максимум дней отпуска в году (оплачиваемые + неоплачиваемые)
+const MAX_TOTAL_DAYS_PER_YEAR = 30;
 
 export async function checkVacation(userId, startDate, endDate) {
-    const year = new Date(startDate).getFullYear();
+  const year = new Date(startDate).getFullYear();
 
-    // 1️⃣ Считаем, сколько отпусков уже есть у пользователя в этом году
-    const countQuery = `
-        SELECT COUNT(*) AS vacation_count,
-               COALESCE(SUM(paid_days + unpaid_days), 0) AS total_days
-        FROM vacations
-        WHERE user_id = $1
-          AND EXTRACT(YEAR FROM start_date) = $2
-    `;
-    const countResult = await pool.query(countQuery, [userId, year]);
-    const vacationCount = parseInt(countResult.rows[0].vacation_count, 10);
-    const totalDays = parseInt(countResult.rows[0].total_days, 10);
+  // Получаем все отпуска пользователя за текущий год
+  const query = `
+    SELECT paid_days, unpaid_days
+    FROM vacations
+    WHERE user_id = $1
+      AND EXTRACT(YEAR FROM start_date) = $2
+  `;
+  const result = await pool.query(query, [userId, year]);
 
-    if (vacationCount >= MAX_VACATIONS_PER_YEAR) {
-        return {
-            allowed: false,
-            reason: `You cannot have more than ${MAX_VACATIONS_PER_YEAR} vacations per year`,
-            takenVacations: vacationCount
-        };
-    }
+  const takenVacations = result.rows.length;
+  const totalDays = result.rows.reduce((sum, v) => sum + v.paid_days + v.unpaid_days, 0);
 
-    // Рассчитываем количество дней для нового отпуска
-    const newStart = new Date(startDate);
-    const newEnd = new Date(endDate);
-    const diffTime = Math.abs(newEnd - newStart);
-    const newDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // включая последний день
-
-    if (totalDays + newDays > MAX_TOTAL_DAYS_PER_YEAR) {
-        return {
-            allowed: false,
-            reason: `You cannot take more than ${MAX_TOTAL_DAYS_PER_YEAR} days of vacation per year`,
-            takenVacations: vacationCount
-        };
-    }
-
-    // 2️⃣ Проверка пересечения с существующими отпусками этого пользователя
-    const overlapQuery = `
-        SELECT *
-        FROM vacations
-        WHERE user_id = $1
-          AND start_date <= $3
-          AND end_date >= $2
-    `;
-    const overlapResult = await pool.query(overlapQuery, [userId, startDate, endDate]);
-    if (overlapResult.rows.length > 0) {
-        return {
-            allowed: false,
-            reason: "This vacation overlaps with your existing vacation",
-            takenVacations: vacationCount
-        };
-    }
-
-    // ✅ Если все проверки пройдены
+  if (takenVacations >= MAX_VACATIONS_PER_YEAR) {
     return {
-        allowed: true,
-        takenVacations: vacationCount
+      allowed: false,
+      reason: `You cannot have more than ${MAX_VACATIONS_PER_YEAR} vacations per year`,
+      takenVacations
     };
-}
+  }
 
+  const newStart = new Date(startDate);
+  const newEnd = new Date(endDate);
+  const newDays = Math.ceil((newEnd - newStart) / (1000*60*60*24)) + 1;
+
+  if (totalDays + newDays > MAX_TOTAL_DAYS_PER_YEAR) {
+    return {
+      allowed: false,
+      reason: `You cannot take more than ${MAX_TOTAL_DAYS_PER_YEAR} vacation days per year`,
+      takenVacations
+    };
+  }
+
+  // Проверяем пересечение с уже существующими отпусками
+  const overlapQuery = `
+    SELECT 1
+    FROM vacations
+    WHERE user_id = $1
+      AND start_date <= $3
+      AND end_date >= $2
+  `;
+  const overlapResult = await pool.query(overlapQuery, [userId, startDate, endDate]);
+  if (overlapResult.rows.length > 0) {
+    return {
+      allowed: false,
+      reason: "This vacation overlaps with your existing vacation",
+      takenVacations
+    };
+  }
+
+  return {
+    allowed: true,
+    takenVacations
+  };
+}
 
 
 /**
@@ -175,34 +171,25 @@ export async function checkVacation(userId, startDate, endDate) {
  * Возвращает { allowed, reason?, paidDays, unpaidDays, compensation }
  */
 export async function calculateCompensation(userId, startDate, endDate) {
-    const dailyRate = 300; // 💰 ставка за день (пример)
-    const maxPaidDays = 20;
-    const maxUnpaidDays = 10;
+  const dailyRate = 300;
+  const maxPaidDays = 20;
+  const maxUnpaidDays = 10;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // включая последний день
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const totalDays = Math.ceil((end - start) / (1000*60*60*24)) + 1;
 
-    if (days <= 0) {
-        return { allowed: false, reason: "Invalid date range" };
-    }
+  const paidDays = Math.min(totalDays, maxPaidDays);
+  const unpaidDays = Math.min(Math.max(totalDays - maxPaidDays, 0), maxUnpaidDays);
 
-    let paidDays = Math.min(days, maxPaidDays);
-    let unpaidDays = Math.max(0, days - maxPaidDays);
+  if (paidDays + unpaidDays > maxPaidDays + maxUnpaidDays) {
+    return { allowed: false, reason: `Vacation cannot exceed ${maxPaidDays + maxUnpaidDays} days` };
+  }
 
-    if (unpaidDays > maxUnpaidDays) {
-        return { allowed: false, reason: `Vacation cannot exceed ${maxPaidDays + maxUnpaidDays} days` };
-    }
-
-    const compensation = paidDays * dailyRate;
-
-    return {
-        allowed: true,
-        paidDays,
-        unpaidDays,
-        compensation
-    };
+  return {
+    allowed: true,
+    paidDays,
+    unpaidDays,
+    compensation: paidDays * dailyRate
+  };
 }
-
-

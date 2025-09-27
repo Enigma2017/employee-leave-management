@@ -66,7 +66,7 @@ export const deleteVacation = async (id) => {
   return response;
 };
 
-export const calculateVacation = async (userId, start_date, end_date) => {
+export const calculateCompensation = async (userId, start_date, end_date) => {
   const params = new URLSearchParams({ userId, start: start_date, end: end_date });
   const response = await fetch(`${apiUrl}/vacations/calculate?${params}`);
   return response.json();
