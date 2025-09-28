@@ -9,6 +9,7 @@ import {
   createVacationWithCheck,
   calculateCompensation
 } from '../services/vacation.service.js';
+import { signIn } from '../services/auth.services.js'; 
 
 const router = express.Router();
 
@@ -145,6 +146,18 @@ router.delete('/vacations/:id', async (req, res) => {
   try {
     await deleteVacation(id);
     res.status(200).send('Vacation deleted successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// --- AUTH ---
+router.post('/signin', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const result = await signIn(email, password);
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');
