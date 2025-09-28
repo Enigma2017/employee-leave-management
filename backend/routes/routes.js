@@ -168,7 +168,7 @@ router.post('/signin', async (req, res) => {
 
         const answerData = { accessToken: result.accessToken };
         
-        return res.status(200).json(result)
+        return res.status(200).json(answerData);
       };
   } catch (error) {
     console.error(error);
