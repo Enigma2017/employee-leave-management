@@ -19,7 +19,6 @@ export const Calendar = () => {
   const [blocked, setBlocked] = useState(false);
   const [blockedMessage, setBlockedMessage] = useState("");
 
-  // Загрузка пользователей и отпусков
   useEffect(() => {
     const loadData = async () => {
       const usersData = await fetchUsers("all");
@@ -28,7 +27,6 @@ export const Calendar = () => {
       if (usersData.length > 0) {
         const firstUser = usersData[0];
 
-        // Загружаем отпуска с сервера
         const vacations = await fetchVacations();
         const userVacations = vacations.filter(
           (v) => v.user_id === firstUser.id
@@ -41,7 +39,6 @@ export const Calendar = () => {
     loadData();
   }, []);
 
-  // Подсчёт всех уже использованных дней
   const totalTakenDays =
     currentUser?.vacations?.reduce((sum, v) => {
       const start = new Date(v.start_date);
@@ -49,7 +46,6 @@ export const Calendar = () => {
       return sum + Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
     }, 0) || 0;
 
-  // Проверка лимита отпусков
  const handleBlockVacation = (msg = "30 дней уже использованы. Новый отпуск невозможен.") => {
   setBlocked(true);
   setBlockedMessage(msg);
@@ -64,13 +60,11 @@ export const Calendar = () => {
 
   if (!selectedRange?.from || !selectedRange?.to || !currentUser) return;
 
-  // Проверка лимитов (третий отпуск или больше 30 дней)
   if (currentUser.vacations.length >= 2 || totalTakenDays >= 30) {
     handleBlockVacation();
     return;
   }
 
-  // Проверка возможности отпуска через сервер
   const vacationStatus = await checkVacation(
     currentUser.id,
     selectedRange.from,
@@ -86,7 +80,6 @@ export const Calendar = () => {
     );
 
     if (calc.error) {
-      // тут перехватываем ошибку 400 и блокируем
       handleBlockVacation(calc.message);
       return;
     }
@@ -105,7 +98,6 @@ export const Calendar = () => {
     )
       return;
 
-    // Создаём отпуск на сервере
     const result = await createVacationRequest(
       currentUser.id,
       range.from,
@@ -119,11 +111,9 @@ export const Calendar = () => {
 
     alert("Vacation created!");
 
-    // Обновляем локальное состояние с актуальными отпусками с сервера
     const vacations = result.data.vacations || [];
     setCurrentUser((prev) => ({ ...prev, vacations }));
 
-    // Сбрасываем форму
     setRange(null);
     setStatus(null);
     setCompensation(null);
@@ -138,12 +128,11 @@ export const Calendar = () => {
       return;
     }
 
-    // Обновляем локальные отпуска
     setCurrentUser((prev) => ({
       ...prev,
       vacations: prev.vacations.filter((v) => v.id !== vacationId)
     }));
-    setBlocked(false); // вдруг после удаления снова стало можно
+    setBlocked(false);
     setBlockedMessage("");
   };
 
@@ -158,10 +147,10 @@ export const Calendar = () => {
 
           {compensation && !blocked && (
             <div style={{ marginTop: "10px" }}>
-              <p>Оплачиваемые дни: {compensation.paidDays}</p>
-              <p>Неоплачиваемые дни: {compensation.unpaidDays}</p>
-              <p>Сумма компенсации: {compensation.compensation} грн</p>
-              <p>Всего взято дней отпуска: {totalTakenDays}</p>
+              <p>Paid days: {compensation.paidDays}</p>
+              <p>Unpaid days: {compensation.unpaidDays}</p>
+              <p>Summ of compensation: {compensation.compensation} грн</p>
+              <p>Total taken days: {totalTakenDays}</p>
             </div>
           )}
 
@@ -186,15 +175,14 @@ export const Calendar = () => {
                 const vacationDays =
                   Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-                // форматируем даты
                 const startFormatted = start.toLocaleDateString("uk-UA");
                 const endFormatted = end.toLocaleDateString("uk-UA");
 
                 return (
                   <div key={v.id} style={{ marginBottom: "10px" }}>
                     <strong>{startFormatted} - {endFormatted}</strong>
-                    <div>Количество дней отпуска: {vacationDays}</div>
-                    <div>Сумма компенсации: {v.compensation ?? 0} грн</div>
+                    <div>Total taken days: {vacationDays}</div>
+                    <div>Summ of compensation: {v.compensation ?? 0} USD</div>
                     <button onClick={() => handleDeleteVacation(v.id)}>
                       Delete
                     </button>

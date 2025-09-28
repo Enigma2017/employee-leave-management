@@ -9,7 +9,6 @@ export const EditUsersForm = ({ onUpdate, currentUser }) => {
     password: ""
   });
 
-  // при изменении currentUser заполняем форму его данными
   useEffect(() => {
     if (currentUser) {
       setFormData(currentUser);
@@ -30,7 +29,7 @@ export const EditUsersForm = ({ onUpdate, currentUser }) => {
     const response = await editUser(currentUser.id, formData);
 
     if (response.status === 201) {
-      setFormData({ name: "", email: "", role: "", password: "" }); // очистка формы
+      setFormData({ name: "", email: "", role: "", password: "" });
     }
 
     onUpdate({ success: response.status === 201 });

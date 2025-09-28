@@ -15,7 +15,7 @@ export async function createUsersTable() {
     await pool.query(query);
 }
 
-// Функция для получения всех пользователей
+// function for getting all the data of users
 export async function getAllUsers(role = 'all') {
   const query = `
     SELECT 

@@ -72,8 +72,8 @@ export const calculateCompensation = async (userId, start_date, end_date) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    // возвращаем объект ошибки
-    return { error: true, message: errorData.message || "Ошибка при расчёте компенсации" };
+
+    return { error: true, message: errorData.message || "Error calculating compensation" };
   }
 
   return response.json();
@@ -87,7 +87,6 @@ export const createVacationRequest = async (userId, start_date, end_date) => {
       body: JSON.stringify({ userId, start_date, end_date })
     });
 
-    // Проверяем, что сервер вернул JSON
     const text = await response.text();
     let data = {};
     try {

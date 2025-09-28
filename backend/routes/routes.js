@@ -12,7 +12,7 @@ import {
 
 const router = express.Router();
 
-// Создаем таблицы пользователей и отпусков
+// creating the table of users and vacations
 async function ensureTables() {
   try {
     await createUsersTable();
@@ -106,7 +106,7 @@ router.post('/vacations/create', async (req, res) => {
       return res.status(400).json({ error: result.reason });
     }
 
-    // Возвращаем сразу все отпуска пользователя, чтобы фронтенд имел актуальные данные
+    // returning all vacations of the user to have fresh data on the frontend
     res.status(201).json({
       vacation: result.vacation,
       vacations: result.vacations,
