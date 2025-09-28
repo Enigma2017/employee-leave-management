@@ -157,7 +157,19 @@ router.post('/signin', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await signIn(email, password);
-    res.json(result);
+    if (!result.success) return res.status(400).send('Invalid email or password')
+      else {
+      // set headers http only refresh token
+        res.cookie('refreshToken', result.refreshToken, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        }); 
+
+        const answerData = { accessToken: result.accessToken };
+        
+        return res.status(200).json(result)
+      };
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');

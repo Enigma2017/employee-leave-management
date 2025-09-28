@@ -9,11 +9,37 @@ export async function createUsersTable() {
             name VARCHAR(100) NOT NULL,
             email VARCHAR(100) UNIQUE NOT NULL,
             role VARCHAR(50) NOT NULL,
-            password VARCHAR(100) NOT NULL
+            password VARCHAR(100) NOT NULL,
+            refreshTokenHash CHAR(64) -- SHA-256 хэш токена
         )
     `;
     await pool.query(query);
 }
+
+export async function addRefreshTokenColumn() {
+  try {
+    const checkColumn = await pool.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'users' AND column_name = 'refreshtokenhash';
+    `);
+
+    if (checkColumn.rows.length === 0) {
+      await pool.query(`
+        ALTER TABLE users
+        ADD COLUMN refreshTokenHash CHAR(64);
+      `);
+      console.log("✅ Column 'refreshTokenHash' added to 'users' table");
+    } else {
+      console.log("ℹ️ Column 'refreshTokenHash' already exists in 'users' table");
+    }
+  } catch (err) {
+    console.error("❌ Error adding column 'refreshTokenHash':", err);
+    throw err;
+  }
+}
+
+//addRefreshTokenColumn();  
 
 // function for getting all the data of users
 export async function getAllUsers(role = 'all') {
