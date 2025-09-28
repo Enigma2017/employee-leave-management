@@ -50,42 +50,50 @@ export const Calendar = () => {
     }, 0) || 0;
 
   // Проверка лимита отпусков
-  const handleBlockVacation = () => {
-    setBlocked(true);
-    setBlockedMessage("30 дней уже использованы. Новый отпуск невозможен.");
-    console.log("Vacation blocked due to limits");  
-  };
-
+ const handleBlockVacation = (msg = "30 дней уже использованы. Новый отпуск невозможен.") => {
+  setBlocked(true);
+  setBlockedMessage(msg);
+  console.warn("Vacation blocked:", msg);
+};
   const handleSelect = async (selectedRange) => {
-    setRange(selectedRange);
-    setStatus(null);
-    setCompensation(null);
+  setRange(selectedRange);
+  setStatus(null);
+  setCompensation(null);
+  setBlocked(false);
+  setBlockedMessage("");
 
-    if (!selectedRange?.from || !selectedRange?.to || !currentUser) return;
+  if (!selectedRange?.from || !selectedRange?.to || !currentUser) return;
 
-    // Проверка лимитов (третий отпуск или больше 30 дней)
-    if (currentUser.vacations.length >= 2 || totalTakenDays >= 30) {
-      handleBlockVacation();
-      return;
-    }
+  // Проверка лимитов (третий отпуск или больше 30 дней)
+  if (currentUser.vacations.length >= 2 || totalTakenDays >= 30) {
+    handleBlockVacation();
+    return;
+  }
 
-    // Проверка возможности отпуска через сервер
-    const vacationStatus = await checkVacation(
+  // Проверка возможности отпуска через сервер
+  const vacationStatus = await checkVacation(
+    currentUser.id,
+    selectedRange.from,
+    selectedRange.to
+  );
+  setStatus(vacationStatus);
+
+  if (vacationStatus.allowed) {
+    const calc = await calculateCompensation(
       currentUser.id,
       selectedRange.from,
       selectedRange.to
     );
-    setStatus(vacationStatus);
 
-    if (vacationStatus.allowed) {
-      const calc = await calculateCompensation(
-        currentUser.id,
-        selectedRange.from,
-        selectedRange.to
-      );
-      setCompensation(calc);
+    if (calc.error) {
+      // тут перехватываем ошибку 400 и блокируем
+      handleBlockVacation(calc.message);
+      return;
     }
-  };
+
+    setCompensation(calc);
+  }
+};
 
   const handleConfirm = async () => {
     if (

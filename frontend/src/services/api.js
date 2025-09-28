@@ -69,6 +69,13 @@ export const deleteVacation = async (id) => {
 export const calculateCompensation = async (userId, start_date, end_date) => {
   const params = new URLSearchParams({ userId, start: start_date, end: end_date });
   const response = await fetch(`${apiUrl}/vacations/calculate?${params}`);
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    // возвращаем объект ошибки
+    return { error: true, message: errorData.message || "Ошибка при расчёте компенсации" };
+  }
+
   return response.json();
 };
 
