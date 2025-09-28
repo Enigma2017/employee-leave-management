@@ -23,22 +23,6 @@ async function ensureTables() {
 }
 ensureTables();
 
-// --- TEST ROUTE ---
-router.get('/', (req, res) => {
-  res.send('Hello World from routes');
-});
-
-router.get('/testdb', async (req, res) => {
-  const randomName = `User${Math.floor(Math.random() * 1000)}`;
-  const randomEmail = `user${Math.floor(Math.random() * 1000)}@example.com`;
-  const randomRole = 'employee';
-  const randomPassword = 'password123';
-
-  await addUser(randomName, randomEmail, randomRole, randomPassword);
-  const users = await getAllUsers();
-  res.json(users);
-});
-
 // --- USERS ---
 router.get('/users', async (req, res) => {
   try {

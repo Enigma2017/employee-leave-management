@@ -106,3 +106,12 @@ export const createVacationRequest = async (userId, start_date, end_date) => {
   }
 };
 
+// authorization of user
+export const signIn = async (email, password) => {
+  const response = await fetch(`${apiUrl}/signin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+  return response.json();
+};  

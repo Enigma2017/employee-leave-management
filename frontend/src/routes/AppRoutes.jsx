@@ -3,7 +3,6 @@ import {MainPage} from "../pages/MainPage";
 import {SignInPage} from "../pages/SignInPage";
 import {EmployeeCabinetPage} from "../pages/EmployeeCabinetPage";
 import {AdminPage} from "../pages/AdminPage";
-import {ApplicationFormPage} from "../pages/ApplicationFormPage";
 
 function AppRouter() {
   return (
@@ -13,7 +12,6 @@ function AppRouter() {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/employee" element={<EmployeeCabinetPage />} />
         <Route path="/admin" element={<AdminPage />} />
-        <Route path="/application" element={<ApplicationFormPage />} />
       </Routes>
     </BrowserRouter>
   );
