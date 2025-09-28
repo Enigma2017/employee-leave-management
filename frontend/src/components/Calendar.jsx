@@ -180,16 +180,30 @@ export const Calendar = () => {
           {currentUser.vacations?.length > 0 && (
             <div style={{ marginTop: "20px" }}>
               <h3>Your Vacations:</h3>
-              {currentUser.vacations.map((v) => (
-                <div key={v.id}>
-                  {v.start_date} - {v.end_date}{" "}
-                  <button onClick={() => handleDeleteVacation(v.id)}>
-                    Delete
-                  </button>
-                </div>
-              ))}
+              {currentUser.vacations.map((v) => {
+                const start = new Date(v.start_date);
+                const end = new Date(v.end_date);
+                const vacationDays =
+                  Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+                // форматируем даты
+                const startFormatted = start.toLocaleDateString("uk-UA");
+                const endFormatted = end.toLocaleDateString("uk-UA");
+
+                return (
+                  <div key={v.id} style={{ marginBottom: "10px" }}>
+                    <strong>{startFormatted} - {endFormatted}</strong>
+                    <div>Количество дней отпуска: {vacationDays}</div>
+                    <div>Сумма компенсации: {v.compensation ?? 0} грн</div>
+                    <button onClick={() => handleDeleteVacation(v.id)}>
+                      Delete
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
+
         </>
       ) : (
         <p>Loading user...</p>
