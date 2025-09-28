@@ -80,7 +80,14 @@ export const createVacationRequest = async (userId, start_date, end_date) => {
       body: JSON.stringify({ userId, start_date, end_date })
     });
 
-    const data = await response.json();
+    // Проверяем, что сервер вернул JSON
+    const text = await response.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (err) {
+      console.error("Failed to parse JSON:", err);
+    }
 
     if (!response.ok) {
       return { error: data.error || "Unknown error" };
@@ -92,3 +99,4 @@ export const createVacationRequest = async (userId, start_date, end_date) => {
     return { error: "Network error" };
   }
 };
+

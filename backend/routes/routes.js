@@ -1,208 +1,99 @@
-import routes from 'express' // import express
-import { getAllUsers, createUsersTable, addUser, editUser, deleteUser } from '../services/users.services.js'
-import { createVacationsTable, getAllVacations, addVacation, editVacation, deleteVacation, checkVacation, createVacationWithCheck, calculateCompensation } from '../services/vacation.service.js'
+import express from 'express';
+import { getAllUsers, createUsersTable, addUser, editUser, deleteUser } from '../services/users.services.js';
+import {
+  createVacationsTable,
+  getAllVacations,
+  editVacation,
+  deleteVacation,
+  checkVacation,
+  createVacationWithCheck,
+  calculateCompensation
+} from '../services/vacation.service.js';
 
-const router = routes.Router() // create a router instance
-//(async () => await createUsersTable())() // ensure the users table exists
-async function ensureUsersTable() {
+const router = express.Router();
+
+// Создаем таблицы пользователей и отпусков
+async function ensureTables() {
   try {
-    await createUsersTable()
-    await createVacationsTable()
+    await createUsersTable();
+    await createVacationsTable();
   } catch (error) {
-    console.error("Error creating users table:", error)
+    console.error("Error creating tables:", error);
   }
 }
+ensureTables();
 
-ensureUsersTable();
-
+// --- TEST ROUTE ---
 router.get('/', (req, res) => {
-  res.send('Hello World from routes')
-})
+  res.send('Hello World from routes');
+});
 
 router.get('/testdb', async (req, res) => {
-  
-  // create random user data
-  const randomName = `User${Math.floor(Math.random() * 1000)}`
-  const randomEmail = `user${Math.floor(Math.random() * 1000)}@example.com`
-  const randomRole = 'employee'
-  const randomPassword = 'password123'
-  // insert the random user into the database
-  await addUser(randomName, randomEmail, randomRole, randomPassword)
+  const randomName = `User${Math.floor(Math.random() * 1000)}`;
+  const randomEmail = `user${Math.floor(Math.random() * 1000)}@example.com`;
+  const randomRole = 'employee';
+  const randomPassword = 'password123';
 
-  // get all users from the database and return as JSON
-  const users = await getAllUsers()
-  res.json(users)
+  await addUser(randomName, randomEmail, randomRole, randomPassword);
+  const users = await getAllUsers();
+  res.json(users);
+});
 
-  // create the users table if it doesn't exist
-  //await createUsersTable()
-
-})
-
-// users RESTful API endpoints
+// --- USERS ---
 router.get('/users', async (req, res) => {
   try {
-    const users = await getAllUsers(req.query.role)
-    res.json(users)
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-// create a new user
-router.post('/user', async (req, res) => {
-  const { name, email, role, password } = req.body
-  try {
-    const newUser = await addUser(name, email, role, password)
-    const isSuccess = !!newUser
-    if (!isSuccess) {
-      return res.status(400).send('Error creating user')
-    }
-    res.status(201).json({data: newUser}, {status: 'User created successfully'})
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error') 
-  }
-})
-
-// edite a user
-router.put('/user/:id', async (req, res) => {
-  const { id } = req.params
-  const { name, email, role, password } = req.body
-  try {
-    const updatedUser = await editUser(id, name, email, role, password)
-    const isSuccess = !!updatedUser
-    if (!isSuccess) {
-      return res.status(400).send('Error editing user')
-    }
-    res.status(201).json({data: updatedUser}, {status: 'User edited successfully'})
-
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')   
-  }  
-  
-})
-
-// delete a user
-router.delete('/user/:id', async (req, res) => {
-  const { id } = req.params
-  try {
-    // delete the user from the database and check success
-    await deleteUser(id)
-    res.status(200).send('User deleted successfully')
-    
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')   
-  }
-})
-
-
-// получить все отпуска
-router.get('/vacations', async (req, res) => {
-  try {
-    const vacations = await getAllVacations()
-    res.json(vacations)
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-// создать новый отпуск
-router.post('/vacations', async (req, res) => {
-  const { userId, start_date, end_date } = req.body
-  try {
-    const vacation = await addVacation(userId, start_date, end_date)
-    if (!vacation) return res.status(400).send('Error creating vacation')
-    res.status(201).json(vacation)
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-/* 
-router.post('/vacations', async (req, res) => {
-  const { userId, start_date, end_date } = req.body;
-  try {
-    const result = await calculateCompensation(userId, start_date, end_date);
-
-    if (!result.allowed) {
-      return res.status(400).json({ error: result.reason });
-    }
-
-    const vacation = await pool.query(
-      `INSERT INTO vacations (user_id, start_date, end_date, paid_days, unpaid_days, compensation)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [userId, start_date, end_date, result.paidDays, result.unpaidDays, result.compensation]
-    );
-
-    res.status(201).json(vacation.rows[0]);
+    const users = await getAllUsers(req.query.role);
+    res.json(users);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Internal Server Error");
+    res.status(500).send('Internal Server Error');
   }
 });
-*/
 
-// проверить доступность отпуска
-router.post('/vacations/check', async (req, res) => {
-  const { userId, start_date, end_date } = req.body
+router.post('/user', async (req, res) => {
+  const { name, email, role, password } = req.body;
   try {
-    const result = await checkVacation(userId, start_date, end_date)
-    res.json(result)
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-// удалить отпуск
-router.delete('/vacations/:id', async (req, res) => {
-  const { id } = req.params
-  try {
-    await deleteVacation(id)
-    res.status(200).send('Vacation deleted successfully')
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-router.put('/vacations/:id', async (req, res) => {
-  const { id } = req.params
-  const { start_date, end_date, status } = req.body
-
-  try {
-    const updatedVacation = await editVacation(id, start_date, end_date, status)
-    if (!updatedVacation) {
-      return res.status(400).send('Error editing vacation')
-    }
-    res.status(200).json({
-      data: updatedVacation,
-      status: 'Vacation updated successfully'
-    })
-  } catch (error) {
-    console.error(error)
-    res.status(500).send('Internal Server Error')
-  }
-})
-
-// GET /vacations/calculate?userId=1&start=2025-07-01&end=2025-07-10
-router.get('/vacations/calculate', async (req, res) => {
-  const { userId, start, end } = req.query;
-  try {
-    const result = await calculateCompensation(userId, start, end);
-    if (!result.allowed) {
-      return res.status(400).json(result);
-    }
-    res.json(result); // {paidDays, unpaidDays, compensation}
+    const newUser = await addUser(name, email, role, password);
+    if (!newUser) return res.status(400).send('Error creating user');
+    res.status(201).json({ data: newUser, status: 'User created successfully' });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Internal Server Error");
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+router.put('/user/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role, password } = req.body;
+  try {
+    const updatedUser = await editUser(id, name, email, role, password);
+    if (!updatedUser) return res.status(400).send('Error editing user');
+    res.status(200).json({ data: updatedUser, status: 'User edited successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+router.delete('/user/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await deleteUser(id);
+    res.status(200).send('User deleted successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// --- VACATIONS ---
+router.get('/vacations', async (req, res) => {
+  try {
+    const vacations = await getAllVacations();
+    res.json(vacations);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
   }
 });
 
@@ -210,15 +101,70 @@ router.post('/vacations/create', async (req, res) => {
   const { userId, start_date, end_date } = req.body;
   try {
     const result = await createVacationWithCheck(userId, start_date, end_date);
+
     if (!result.allowed) {
       return res.status(400).json({ error: result.reason });
     }
-    res.status(201).json(result); // возвращаем объект с vacation, paidDays, unpaidDays, compensation
+
+    // Возвращаем сразу все отпуска пользователя, чтобы фронтенд имел актуальные данные
+    res.status(201).json({
+      vacation: result.vacation,
+      vacations: result.vacations,
+      paidDays: result.paidDays,
+      unpaidDays: result.unpaidDays,
+      compensation: result.compensation
+    });
   } catch (error) {
     console.error(error);
     res.status(500).send("Internal Server Error");
   }
 });
 
+router.post('/vacations/check', async (req, res) => {
+  const { userId, start_date, end_date } = req.body;
+  try {
+    const result = await checkVacation(userId, start_date, end_date);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
-export default router
+router.get('/vacations/calculate', async (req, res) => {
+  const { userId, start, end } = req.query;
+  try {
+    const result = await calculateCompensation(userId, start, end);
+    if (!result.allowed) return res.status(400).json(result);
+    res.json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+router.put('/vacations/:id', async (req, res) => {
+  const { id } = req.params;
+  const { start_date, end_date, status } = req.body;
+  try {
+    const updatedVacation = await editVacation(id, start_date, end_date, status);
+    if (!updatedVacation) return res.status(400).send('Error editing vacation');
+    res.status(200).json({ data: updatedVacation, status: 'Vacation updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+router.delete('/vacations/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await deleteVacation(id);
+    res.status(200).send('Vacation deleted successfully');
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+export default router;

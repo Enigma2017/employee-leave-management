@@ -3,6 +3,7 @@ import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import {
   fetchUsers,
+  fetchVacations,
   checkVacation,
   calculateCompensation,
   createVacationRequest,
@@ -13,45 +14,50 @@ export const Calendar = () => {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [range, setRange] = useState(null);
-  const [status, setStatus] = useState(null); // { allowed, reason, takenVacations }
+  const [status, setStatus] = useState(null);
   const [compensation, setCompensation] = useState(null);
 
-  // Загрузка пользователей
-  const getUsers = async () => {
-    const data = await fetchUsers("all");
-    setUsers(data);
-    if (data.length > 0) {
-      setCurrentUser(data[0]);
-    }
-  };
-
+  // Загрузка пользователей и отпусков
   useEffect(() => {
-    getUsers();
+    const loadData = async () => {
+      const usersData = await fetchUsers("all");
+      setUsers(usersData);
+
+      if (usersData.length > 0) {
+        const firstUser = usersData[0];
+
+        // Загружаем отпуска с сервера
+        const vacations = await fetchVacations();
+        const userVacations = vacations.filter(v => v.user_id === firstUser.id);
+
+        setCurrentUser({ ...firstUser, vacations: userVacations });
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Выбор диапазона отпуска
-  const handleSelect = async (range) => {
-    setRange(range);
-    setCompensation(null);
+  const handleSelect = async (selectedRange) => {
+    setRange(selectedRange);
     setStatus(null);
+    setCompensation(null);
 
-    if (!range?.from || !range?.to || !currentUser) return;
+    if (!selectedRange?.from || !selectedRange?.to || !currentUser) return;
 
-    // Проверяем возможность отпуска
-    const vacationStatus = await checkVacation(currentUser.id, range.from, range.to);
+    // Проверка возможности отпуска через сервер
+    const vacationStatus = await checkVacation(currentUser.id, selectedRange.from, selectedRange.to);
     setStatus(vacationStatus);
 
     if (vacationStatus.allowed) {
-      // Рассчитываем компенсацию
-      const calc = await calculateCompensation(currentUser.id, range.from, range.to);
+      const calc = await calculateCompensation(currentUser.id, selectedRange.from, selectedRange.to);
       setCompensation(calc);
     }
   };
 
-  // Подтверждение отпуска
   const handleConfirm = async () => {
     if (!currentUser || !range?.from || !range?.to || !compensation?.allowed) return;
 
+    // Создаём отпуск на сервере
     const result = await createVacationRequest(currentUser.id, range.from, range.to);
 
     if (result.error) {
@@ -60,40 +66,33 @@ export const Calendar = () => {
     }
 
     alert("Vacation created!");
+
+    // Обновляем локальное состояние с актуальными отпусками с сервера
+    const vacations = result.data.vacations || [];
+    setCurrentUser(prev => ({ ...prev, vacations }));
+
+    // Сбрасываем форму
     setRange(null);
+    setStatus(null);
     setCompensation(null);
-
-    // Обновляем статус и данные пользователя
-    const updatedUsers = await fetchUsers("all");
-    const updatedCurrent = updatedUsers.find(u => u.id === currentUser.id);
-    setCurrentUser(updatedCurrent);
-
-    if (updatedCurrent?.vacations) {
-      const latestVacation = updatedCurrent.vacations.find(v => v.start_date === range.from && v.end_date === range.to);
-      if (latestVacation) {
-        setStatus({ allowed: true, takenVacations: updatedCurrent.vacations.length });
-      }
-    }
   };
 
-  // Удаление отпуска
   const handleDeleteVacation = async (vacationId) => {
     if (!vacationId) return;
-    const response = await apiDeleteVacation(vacationId);
 
+    const response = await apiDeleteVacation(vacationId);
     if (response.error) {
       alert(response.error);
       return;
     }
 
-    alert("Vacation deleted successfully");
-    setCurrentUser({
-      ...currentUser,
-      vacations: currentUser.vacations.filter(v => v.id !== vacationId),
-    });
+    // Обновляем локальные отпуска
+    setCurrentUser(prev => ({
+      ...prev,
+      vacations: prev.vacations.filter(v => v.id !== vacationId)
+    }));
   };
 
-  // Подсчёт всех взятых дней отпуска
   const totalTakenDays = currentUser?.vacations?.reduce((sum, v) => {
     const start = new Date(v.start_date);
     const end = new Date(v.end_date);
@@ -122,7 +121,10 @@ export const Calendar = () => {
             </div>
           )}
 
-          <button disabled={!status?.allowed} onClick={handleConfirm}>
+          <button
+            disabled={!status?.allowed}
+            onClick={handleConfirm}
+          >
             Confirm Vacation
           </button>
 
@@ -133,7 +135,7 @@ export const Calendar = () => {
           {currentUser.vacations?.length > 0 && (
             <div style={{ marginTop: "20px" }}>
               <h3>Your Vacations:</h3>
-              {currentUser.vacations.map((v) => (
+              {currentUser.vacations.map(v => (
                 <div key={v.id}>
                   {v.start_date} - {v.end_date}{" "}
                   <button onClick={() => handleDeleteVacation(v.id)}>Delete</button>
