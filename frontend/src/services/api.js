@@ -71,3 +71,24 @@ export const calculateCompensation = async (userId, start_date, end_date) => {
   const response = await fetch(`${apiUrl}/vacations/calculate?${params}`);
   return response.json();
 };
+
+export const createVacationRequest = async (userId, start_date, end_date) => {
+  try {
+    const response = await fetch(`${apiUrl}/vacations/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, start_date, end_date })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { error: data.error || "Unknown error" };
+    }
+
+    return { data };
+  } catch (err) {
+    console.error(err);
+    return { error: "Network error" };
+  }
+};
