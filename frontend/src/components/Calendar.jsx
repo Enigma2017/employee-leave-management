@@ -16,6 +16,8 @@ export const Calendar = () => {
   const [range, setRange] = useState(null);
   const [status, setStatus] = useState(null);
   const [compensation, setCompensation] = useState(null);
+  const [blocked, setBlocked] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState("");
 
   // Загрузка пользователей и отпусков
   useEffect(() => {
@@ -28,7 +30,9 @@ export const Calendar = () => {
 
         // Загружаем отпуска с сервера
         const vacations = await fetchVacations();
-        const userVacations = vacations.filter(v => v.user_id === firstUser.id);
+        const userVacations = vacations.filter(
+          (v) => v.user_id === firstUser.id
+        );
 
         setCurrentUser({ ...firstUser, vacations: userVacations });
       }
@@ -37,6 +41,21 @@ export const Calendar = () => {
     loadData();
   }, []);
 
+  // Подсчёт всех уже использованных дней
+  const totalTakenDays =
+    currentUser?.vacations?.reduce((sum, v) => {
+      const start = new Date(v.start_date);
+      const end = new Date(v.end_date);
+      return sum + Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    }, 0) || 0;
+
+  // Проверка лимита отпусков
+  const handleBlockVacation = () => {
+    setBlocked(true);
+    setBlockedMessage("30 дней уже использованы. Новый отпуск невозможен.");
+    console.log("Vacation blocked due to limits");  
+  };
+
   const handleSelect = async (selectedRange) => {
     setRange(selectedRange);
     setStatus(null);
@@ -44,21 +63,46 @@ export const Calendar = () => {
 
     if (!selectedRange?.from || !selectedRange?.to || !currentUser) return;
 
+    // Проверка лимитов (третий отпуск или больше 30 дней)
+    if (currentUser.vacations.length >= 2 || totalTakenDays >= 30) {
+      handleBlockVacation();
+      return;
+    }
+
     // Проверка возможности отпуска через сервер
-    const vacationStatus = await checkVacation(currentUser.id, selectedRange.from, selectedRange.to);
+    const vacationStatus = await checkVacation(
+      currentUser.id,
+      selectedRange.from,
+      selectedRange.to
+    );
     setStatus(vacationStatus);
 
     if (vacationStatus.allowed) {
-      const calc = await calculateCompensation(currentUser.id, selectedRange.from, selectedRange.to);
+      const calc = await calculateCompensation(
+        currentUser.id,
+        selectedRange.from,
+        selectedRange.to
+      );
       setCompensation(calc);
     }
   };
 
   const handleConfirm = async () => {
-    if (!currentUser || !range?.from || !range?.to || !compensation?.allowed) return;
+    if (
+      !currentUser ||
+      !range?.from ||
+      !range?.to ||
+      !compensation?.allowed ||
+      blocked
+    )
+      return;
 
     // Создаём отпуск на сервере
-    const result = await createVacationRequest(currentUser.id, range.from, range.to);
+    const result = await createVacationRequest(
+      currentUser.id,
+      range.from,
+      range.to
+    );
 
     if (result.error) {
       alert(result.error);
@@ -69,7 +113,7 @@ export const Calendar = () => {
 
     // Обновляем локальное состояние с актуальными отпусками с сервера
     const vacations = result.data.vacations || [];
-    setCurrentUser(prev => ({ ...prev, vacations }));
+    setCurrentUser((prev) => ({ ...prev, vacations }));
 
     // Сбрасываем форму
     setRange(null);
@@ -87,17 +131,13 @@ export const Calendar = () => {
     }
 
     // Обновляем локальные отпуска
-    setCurrentUser(prev => ({
+    setCurrentUser((prev) => ({
       ...prev,
-      vacations: prev.vacations.filter(v => v.id !== vacationId)
+      vacations: prev.vacations.filter((v) => v.id !== vacationId)
     }));
+    setBlocked(false); // вдруг после удаления снова стало можно
+    setBlockedMessage("");
   };
-
-  const totalTakenDays = currentUser?.vacations?.reduce((sum, v) => {
-    const start = new Date(v.start_date);
-    const end = new Date(v.end_date);
-    return sum + Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-  }, 0) || 0;
 
   return (
     <div>
@@ -106,13 +146,9 @@ export const Calendar = () => {
         <>
           <p>Logged in as: {currentUser.name}</p>
 
-          <DayPicker
-            mode="range"
-            selected={range}
-            onSelect={handleSelect}
-          />
+          <DayPicker mode="range" selected={range} onSelect={handleSelect} />
 
-          {compensation && (
+          {compensation && !blocked && (
             <div style={{ marginTop: "10px" }}>
               <p>Оплачиваемые дни: {compensation.paidDays}</p>
               <p>Неоплачиваемые дни: {compensation.unpaidDays}</p>
@@ -121,24 +157,27 @@ export const Calendar = () => {
             </div>
           )}
 
-          <button
-            disabled={!status?.allowed}
-            onClick={handleConfirm}
-          >
+          <button disabled={blocked || !status?.allowed} onClick={handleConfirm}>
             Confirm Vacation
           </button>
 
-          {status && !status.allowed && (
+          {blocked && (
+            <p style={{ color: "red", fontWeight: "bold" }}>{blockedMessage}</p>
+          )}
+
+          {status && !status.allowed && !blocked && (
             <p style={{ color: "red" }}>{status.reason}</p>
           )}
 
           {currentUser.vacations?.length > 0 && (
             <div style={{ marginTop: "20px" }}>
               <h3>Your Vacations:</h3>
-              {currentUser.vacations.map(v => (
+              {currentUser.vacations.map((v) => (
                 <div key={v.id}>
                   {v.start_date} - {v.end_date}{" "}
-                  <button onClick={() => handleDeleteVacation(v.id)}>Delete</button>
+                  <button onClick={() => handleDeleteVacation(v.id)}>
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>
