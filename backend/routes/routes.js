@@ -9,7 +9,7 @@ import {
   createVacationWithCheck,
   calculateCompensation
 } from '../services/vacation.service.js';
-import { signIn } from '../services/auth.services.js'; 
+import { signIn, authenticate, getUserById, refreshAccessToken } from '../services/auth.services.js'; 
 
 const router = express.Router();
 
@@ -157,23 +157,55 @@ router.post('/signin', async (req, res) => {
   const { email, password } = req.body;
   try {
     const result = await signIn(email, password);
-    if (!result.success) return res.status(400).send('Invalid email or password')
-      else {
-      // set headers http only refresh token
-        res.cookie('refreshToken', result.refreshToken, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'none'
-        }); 
+    if (!result.success) {
+      return res.status(400).json({ error: 'Invalid email or password' });
+    }
 
-        const answerData = { accessToken: result.accessToken };
-        
-        return res.status(200).json(answerData);
-      };
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Internal Server Error');
+    // Возвращаем accessToken и refreshToken в JSON
+    res.status(200).json({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
+
+
+// GET /api/me - получить данные текущего пользователя
+router.get("/me", authenticate, async (req, res) => {
+  try {
+    // get refresh token from cookies 
+    const refreshToken = req.cookies.refreshToken;
+    console.log("Refresh token from cookies:", refreshToken);
+    const user = await getUserById(req.user.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post('/refresh-token', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'No refresh token provided' });
+  }
+
+  try {
+    const newAccessToken = await refreshAccessToken(refreshToken);
+    if (!newAccessToken) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 export default router;

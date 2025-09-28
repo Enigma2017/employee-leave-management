@@ -1,19 +1,19 @@
 import express from 'express'
 import 'dotenv/config'
 import routes from './routes/routes.js'
+import cookieParser from 'cookie-parser';
+import cors from "cors";
 const app = express()
 
-// corses
-app.use(function (req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*')
-    res.header(
-        'Access-Control-Allow-Headers',
-        'Origin, X-Requested-With, Content-Type, Accept'
-    )
-    next()
-})
+app.use(cors({
+  origin: "http://localhost:5173", // адрес фронтенда
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true // <- вот это ключевое для отправки cookies
+}));
 
 app.use(express.json()) // Middleware to parse JSON bodies
+app.use(cookieParser()); // Middleware to parse cookies
 
 app.use('/', routes)
 
