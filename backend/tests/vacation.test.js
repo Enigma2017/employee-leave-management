@@ -10,7 +10,6 @@ import {
   deleteVacation,
 } from "../services/vacation.service.js";
 
-// Мокаем pool.query
 vi.mock("../db/db.js", () => ({
   default: {
     query: vi.fn(),
@@ -70,12 +69,12 @@ describe("Vacations Service", () => {
 
   it("createVacationWithCheck inserts vacation if allowed", async () => {
     pool.query
-      .mockResolvedValueOnce({ rows: [] }) // checkVacation
-      .mockResolvedValueOnce({ rows: [] }) // calculateCompensation
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
         rows: [{ id: 1, user_id: 1, paid_days: 3, unpaid_days: 0, compensation: 900 }],
-      }) // insert
-      .mockResolvedValueOnce({ rows: [{ id: 1 }] }); // getAllVacations
+      })
+      .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
     const result = await createVacationWithCheck(1, "2025-05-01", "2025-05-03");
 
