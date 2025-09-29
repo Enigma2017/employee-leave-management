@@ -13,7 +13,6 @@ import { signIn, authenticate, getUserById, refreshAccessToken } from '../servic
 
 const router = express.Router();
 
-// creating the table of users and vacations
 async function ensureTables() {
   try {
     await createUsersTable();
@@ -91,7 +90,6 @@ router.post('/vacations/create', async (req, res) => {
       return res.status(400).json({ error: result.reason });
     }
 
-    // returning all vacations of the user to have fresh data on the frontend
     res.status(201).json({
       vacation: result.vacation,
       vacations: result.vacations,
@@ -161,7 +159,6 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
-    // Возвращаем accessToken и refreshToken в JSON
     res.status(200).json({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken
@@ -173,10 +170,8 @@ router.post('/signin', async (req, res) => {
 });
 
 
-// GET /api/me - получить данные текущего пользователя
 router.get("/me", authenticate, async (req, res) => {
   try {
-    // get refresh token from cookies 
     const refreshToken = req.cookies.refreshToken;
     console.log("Refresh token from cookies:", refreshToken);
     const user = await getUserById(req.user.id);

@@ -18,12 +18,10 @@ export const Calendar = () => {
   const [blocked, setBlocked] = useState(false);
   const [blockedMessage, setBlockedMessage] = useState("");
 
-  // Загружаем данные текущего пользователя при монтировании
   useEffect(() => {
     const loadUser = async () => {
       const user = await fetchCurrentUser();
       if (user) {
-        // Загружаем отпуска
         const vacations = await fetchVacations();
         const userVacations = vacations.filter(v => v.user_id === user.id);
 

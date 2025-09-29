@@ -8,10 +8,10 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/" element={<SignInPage />} />
         <Route path="/employee" element={<EmployeeCabinetPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/main" element={<MainPage />} />
       </Routes>
     </BrowserRouter>
   );

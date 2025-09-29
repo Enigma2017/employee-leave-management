@@ -2,6 +2,7 @@
   font-family: "Roboto", sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  width: 100%;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -23,17 +24,24 @@ a:hover {
 }
 
 body {
-  margin: 20px 0 60px;
+  margin: 0;
   display: flex;
   place-items: center;
   justify-content: center;
-  min-width: 320px;
-  min-height: 100vh;
+  height: 100vh;
+}
+
+body #root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 h2 {
   font-size: 4.2em;
-  line-height: 1.5;
+  line-height: 1.8;
+  margin-top: 0;
 }
 
 button {

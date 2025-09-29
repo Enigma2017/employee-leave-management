@@ -6,14 +6,14 @@ import cors from "cors";
 const app = express()
 
 app.use(cors({
-  origin: "http://localhost:5173", // адрес фронтенда
+  origin: "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true // <- вот это ключевое для отправки cookies
+  credentials: true
 }));
 
-app.use(express.json()) // Middleware to parse JSON bodies
-app.use(cookieParser()); // Middleware to parse cookies
+app.use(express.json())
+app.use(cookieParser());
 
 app.use('/', routes)
 

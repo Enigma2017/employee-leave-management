@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { signIn } from "../services/Api";
+import "../styles/signin.css";
 
 export const SignInPage = () => {
    const navigate = useNavigate();
@@ -14,7 +15,6 @@ export const SignInPage = () => {
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem("refreshToken", response.refreshToken);
       alert("Sign in successful!");
-      //redirect to EmployeeCabinetPage
         navigate("/employee");
 
     } else {
@@ -30,21 +30,25 @@ export const SignInPage = () => {
     form.password.value = "";
   };
 
-  return (
-    <div>
-      <h2>Sign In Page</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Email:</label>
-            <input type="text" name="email" />
-          </div>
-          <div>
-            <label>Password:</label>
-            <input type="password" name="password" />
-          </div>
+return (
+  <div className="container">
+    <div className="form-card">
+      <h2>Sign In</h2>
+      <form onSubmit={handleSubmit} className="signin-form">
+        <div className="form-group">
+          <label>Email:</label>
+          <input type="text" name="email" />
+        </div>
+        <div className="form-group">
+          <label>Password:</label>
+          <input type="password" name="password" />
+        </div>
+        <div className="button-group">
           <button type="submit">Sign In</button>
-          <button onClick={autoComplete}>Auto Complete</button>
-        </form> 
+          <button type="button" onClick={autoComplete}>Auto Complete</button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
 };  

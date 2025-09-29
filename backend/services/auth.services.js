@@ -1,13 +1,10 @@
 import pool from "../db/db.js";
 import crypto, { randomBytes } from "crypto";
 
-// Секретный ключ (32 байта для AES-256)
-// Обычно хранится в .env
-const SECRET_KEY = '12345678901234567890123456789012'; // 32 chars
+const SECRET_KEY = '12345678901234567890123456789012';
 const IV_LENGTH = 16; 
-const ACCESS_TOKEN_EXPIRY = 0.5 * 60 * 1000; // 1 минута для примера
+const ACCESS_TOKEN_EXPIRY = 0.5 * 60 * 1000;
 
-// --- Шифрование / дешифрование ---
 export function encrypt(text) {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv("aes-256-gcm", SECRET_KEY, iv);
@@ -33,7 +30,6 @@ export function decrypt(tokenString) {
   return decrypted;
 }
 
-// --- Вход пользователя ---
 export async function signIn(email, password) {
   const query = `SELECT * FROM users WHERE email=$1 AND password=$2`;
   const values = [email, password];
@@ -45,17 +41,14 @@ export async function signIn(email, password) {
   const authData = { userData, expires: Date.now() + ACCESS_TOKEN_EXPIRY };
   const accessToken = encrypt(JSON.stringify(authData));
 
-  // Генерация refresh token
   const refreshToken = randomBytes(32).toString("hex");
   const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
-  // Сохраняем hash в базе
   await pool.query(`UPDATE users SET refreshTokenHash=$1 WHERE id=$2`, [refreshTokenHash, user.id]);
 
   return { success: true, accessToken, refreshToken };
 }
 
-// --- Декодирование access token ---
 export function decodeAccessToken(tokenString) {
   try {
     const decrypted = decrypt(tokenString);
@@ -65,7 +58,6 @@ export function decodeAccessToken(tokenString) {
   }
 }
 
-// --- Проверка и логирование access token ---
 export async function authenticate(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -92,7 +84,6 @@ export async function authenticate(req, res, next) {
   }
 }
 
-// --- Получение пользователя по ID ---
 export async function getUserById(userId) {
   const query = `SELECT id, name, email, role FROM users WHERE id=$1`;
   const values = [userId];
@@ -100,7 +91,6 @@ export async function getUserById(userId) {
   return result.rows[0] || null;
 }
 
-// --- Обновление access token через refresh token ---
 export async function refreshAccessToken(refreshTokenFromClient) {
   if (!refreshTokenFromClient) return { success: false, error: "No refresh token provided" };
 
