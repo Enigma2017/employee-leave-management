@@ -1,4 +1,4 @@
-const apiUrl = 'http://localhost:3000';
+const apiUrl = 'http://localhost:3000/api';
 
 async function fetchWithAuth(url, options = {}) {
   let accessToken = localStorage.getItem("accessToken");
