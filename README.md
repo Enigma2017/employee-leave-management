@@ -51,19 +51,41 @@ DB_NAME=postgres
 
 ## Setup and Running with Docker
 
-1. **Build Docker Image**  
+### 1️⃣ Create Docker Network (only once)
 
 ```bash
-docker build -t employee-leave-management .
+docker network create employee-network
 ```
 
-2. **Run Docker Container**  
+### 2️⃣ Run PostgreSQL Container
+
+```bash
+docker run -d \
+  --name employee-leave-db \
+  --network employee-network \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=2007 \
+  -e POSTGRES_DB=postgres \
+  postgres:latest
+```
+
+### 3️⃣ Check PostgreSQL Status
+
+```bash
+docker ps
+docker logs employee-leave-db
+```
+
+- Look for `database system is ready to accept connections` in logs.
+
+### 4️⃣ Run Backend + Frontend Container
 
 ```bash
 docker run -d \
   --name employee-leave-app \
+  --network employee-network \
   -p 3000:3000 \
-  -e DB_HOST=postgres \
+  -e DB_HOST=employee-leave-db \
   -e DB_PORT=5432 \
   -e DB_USER=postgres \
   -e DB_PASSWORD=2007 \
@@ -77,10 +99,44 @@ docker run -d \
 > - Run backend tests (`vitest`)  
 > - Start the backend server  
 
-3. **Access the Application**  
+### 5️⃣ Verify Containers
 
-- Backend API: `http://localhost:3000`  
-- Frontend: served via backend (React build copied into `/frontend/dist`)
+```bash
+docker ps
+```
+
+- Both `employee-leave-db` and `employee-leave-app` should be `Up`.  
+- Access backend at: `http://localhost:3000`
+
+---
+
+## Stopping Containers
+
+- Stop only backend:
+
+```bash
+docker stop employee-leave-app
+```
+
+- Stop only database:
+
+```bash
+docker stop employee-leave-db
+```
+
+- Stop all containers:
+
+```bash
+docker stop $(docker ps -q)
+```
+
+---
+
+## Removing Containers
+
+```bash
+docker rm -f employee-leave-app employee-leave-db
+```
 
 ---
 
@@ -158,5 +214,4 @@ The database is PostgreSQL. The Docker setup uses `init.sql` to populate:
 ## License
 
 ISC © Shvets K
-
 
