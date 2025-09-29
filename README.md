@@ -26,7 +26,7 @@ The backend enforces rules such as:
 /backend       - Node.js backend code
 /frontend      - React frontend code
 /init.sql      - SQL file to initialize the database with some users and vacations
-/Dockerfile   - Docker configuration
+/Dockerfile    - Docker configuration
 ```
 
 ---
@@ -60,13 +60,7 @@ docker network create employee-network
 ### 2️⃣ Run PostgreSQL Container
 
 ```bash
-docker run -d \
-  --name employee-leave-db \
-  --network employee-network \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=2007 \
-  -e POSTGRES_DB=postgres \
-  postgres:latest
+docker run -d   --name employee-leave-db   --network employee-network   -e POSTGRES_USER=postgres   -e POSTGRES_PASSWORD=2007   -e POSTGRES_DB=postgres   postgres:latest
 ```
 
 ### 3️⃣ Check PostgreSQL Status
@@ -81,16 +75,7 @@ docker logs employee-leave-db
 ### 4️⃣ Run Backend + Frontend Container
 
 ```bash
-docker run -d \
-  --name employee-leave-app \
-  --network employee-network \
-  -p 3000:3000 \
-  -e DB_HOST=employee-leave-db \
-  -e DB_PORT=5432 \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=2007 \
-  -e DB_NAME=postgres \
-  employee-leave-management
+docker run -d   --name employee-leave-app   --network employee-network   -p 3000:3000   -e DB_HOST=employee-leave-db   -e DB_PORT=5432   -e DB_USER=postgres   -e DB_PASSWORD=2007   -e DB_NAME=postgres   employee-leave-management
 ```
 
 > This command will:  
@@ -181,25 +166,25 @@ The database is PostgreSQL. The Docker setup uses `init.sql` to populate:
 
 ### Users
 
-- `GET /users?role=<role>` - Get all users, filter by role
-- `POST /user` - Create new user
-- `PUT /user/:id` - Update user
-- `DELETE /user/:id` - Delete user
+- `GET /api/users?role=<role>` - Get all users, filter by role  
+- `POST /api/user` - Create new user  
+- `PUT /api/user/:id` - Update user  
+- `DELETE /api/user/:id` - Delete user  
 
 ### Vacations
 
-- `GET /vacations` - List all vacations
-- `POST /vacations/create` - Create a vacation with validation
-- `POST /vacations/check` - Check vacation availability
-- `GET /vacations/calculate` - Calculate compensation
-- `PUT /vacations/:id` - Edit vacation
-- `DELETE /vacations/:id` - Delete vacation
+- `GET /api/vacations` - List all vacations  
+- `POST /api/vacations/create` - Create a vacation with validation  
+- `POST /api/vacations/check` - Check vacation availability  
+- `GET /api/vacations/calculate` - Calculate compensation  
+- `PUT /api/vacations/:id` - Edit vacation  
+- `DELETE /api/vacations/:id` - Delete vacation  
 
 ### Auth
 
-- `POST /signin` - Login user
-- `GET /me` - Get current user (requires token)
-- `POST /refresh-token` - Refresh access token
+- `POST /api/signin` - Login user  
+- `GET /api/me` - Get current user (requires token)  
+- `POST /api/refresh-token` - Refresh access token  
 
 ---
 
@@ -214,4 +199,3 @@ The database is PostgreSQL. The Docker setup uses `init.sql` to populate:
 ## License
 
 ISC © Shvets K
-
