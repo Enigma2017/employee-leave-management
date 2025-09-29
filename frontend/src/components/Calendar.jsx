@@ -128,7 +128,7 @@ export const Calendar = () => {
             <div style={{ marginTop: "10px" }}>
               <p>Paid days: {compensation.paidDays}</p>
               <p>Unpaid days: {compensation.unpaidDays}</p>
-              <p>Sum of compensation: {compensation.compensation} грн</p>
+              <p>Sum of compensation: {compensation.compensation} USD</p>
               <p>Total taken days: {totalTakenDays}</p>
             </div>
           )}
@@ -154,7 +154,7 @@ export const Calendar = () => {
                   <div key={v.id} style={{ marginBottom: "10px" }}>
                     <strong>{startFormatted} - {endFormatted}</strong>
                     <div>Total taken days: {vacationDays}</div>
-                    <div>Sum of compensation: {v.compensation ?? 0} грн</div>
+                    <div>Sum of compensation: {v.compensation ?? 0} USD</div>
                     <button onClick={() => handleDeleteVacation(v.id)}>Delete</button>
                   </div>
                 );
