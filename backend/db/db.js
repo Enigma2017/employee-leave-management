@@ -2,12 +2,11 @@
 import { Pool } from "pg";
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "postgres",
-  password: "2007",
-  port: 5432,
-  connectionString: process.env.DATABASE_URL,
+  host: process.env.DB_HOST,   // должно быть employee-leave-db
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
 
 process.on("SIGINT", async () => { await pool.end(); process.exit(0); });
